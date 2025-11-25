@@ -1,2 +1,911 @@
-# Latency-Aware_Gated-CNN
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Computation - Ontario Tech FEAS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto+Slab:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* --- ONTARIO TECH / FEAS THEME --- */
+        :root {
+            --ot-blue: #003C71;      /* Official Dark Blue */
+            --ot-blue-light: #0077CA; /* Secondary Blue */
+            --ot-orange: #E75D2A;    /* Official Orange */
+            --ot-grey: #F0F2F5;
+            --text-main: #333333;
+            --text-light: #ffffff;
+            --slide-scale: 1;
+        }
 
+        /* --- CORE LAYOUT --- */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: #2c2c2c; /* Dark background behind slides */
+            font-family: 'Open Sans', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- SLIDE CONTAINER --- */
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            background: #ffffff;
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%) scale(var(--slide-scale));
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            
+            /* Transition Logic */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-container.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* --- FEAS TEMPLATE ELEMENTS --- */
+        /* The decorative top bar */
+        .header-bar {
+            height: 12px;
+            width: 100%;
+            background: var(--ot-blue);
+            position: relative;
+        }
+        .header-bar::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 0;
+            width: 200px; height: 100%;
+            background: var(--ot-orange);
+        }
+
+        /* Footer */
+        .footer-bar {
+            height: 40px;
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            font-size: 12px;
+            color: #666;
+            position: absolute;
+            bottom: 0;
+        }
+        .logo-text {
+            font-weight: 700;
+            color: var(--ot-blue);
+            font-family: 'Roboto Slab', serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- CONTENT AREA --- */
+        .slide-content {
+            padding: 40px 60px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-family: 'Roboto Slab', serif;
+            font-weight: 700;
+            color: var(--ot-blue);
+            font-size: 56px;
+            margin-bottom: 10px;
+            line-height: 1.1;
+        }
+        h2 {
+            font-family: 'Roboto Slab', serif;
+            font-weight: 300;
+            color: var(--ot-blue);
+            font-size: 42px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--ot-orange);
+            padding-bottom: 10px;
+            display: inline-block;
+            min-width: 400px;
+        }
+        h3 {
+            color: var(--ot-blue-light);
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        p, li {
+            font-size: 22px;
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        strong { color: var(--ot-blue); }
+
+        /* --- TITLE SLIDE SPECIFIC --- */
+        #slide1 .slide-content {
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .title-decoration {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 400px; height: 100%;
+            background: url('https://shared.ontariotechu.ca/shared/departments/brand/images/pattern-library/tech-pattern-blue-20.png'); /* Conceptual pattern */
+            opacity: 0.1;
+            clip-path: polygon(20% 0%, 100% 0, 100% 100%, 0% 100%);
+            background-color: var(--ot-blue);
+        }
+
+        /* --- CARDS & GRIDS --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; height: 100%; align-items: center; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-left: 5px solid var(--ot-blue);
+            padding: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-left-color: var(--ot-orange);
+        }
+        .card i { font-size: 32px; color: var(--ot-orange); margin-bottom: 15px; display: block; }
+
+        /* --- CHARTS (CSS Based) --- */
+        .bar-container { width: 100%; margin-top: 20px; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 15px; }
+        .bar-label { width: 180px; text-align: right; margin-right: 15px; font-weight: bold; color: var(--ot-blue); }
+        .bar-track { flex: 1; background: #eee; height: 30px; border-radius: 4px; overflow: hidden; }
+        .bar-fill { 
+            height: 100%; 
+            background: var(--ot-blue); 
+            width: 0; 
+            transition: width 1.5s ease; 
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-end; 
+            padding-right: 10px; 
+            color: white; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
+        .bar-fill.orange { background: var(--ot-orange); }
+
+        /* --- INTERACTIVE DEMO (Slide 11) --- */
+        .demo-layout { display: flex; gap: 30px; height: 100%; width: 100%; }
+        .net-panel {
+            flex: 1; 
+            background: #f8f9fa; 
+            border: 1px solid #ccc;
+            border-radius: 8px; 
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+        .net-header { 
+            padding: 15px; 
+            background: var(--ot-blue); 
+            color: white;
+            display: flex; justify-content: space-between; font-weight: bold; 
+        }
+        .canvas-area { flex: 1; position: relative; background: #1a202c; } /* Keep canvas dark for contrast */
+        canvas { width: 100%; height: 100%; position: absolute; }
+        .net-stats { 
+            padding: 15px; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
+            background: white; border-top: 1px solid #eee;
+        }
+        .stat-val { font-family: monospace; font-size: 20px; color: var(--ot-blue); font-weight: bold; }
+
+        .slider-container {
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 15px 30px; border-radius: 50px;
+            border: 1px solid var(--ot-blue); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 20px; z-index: 20;
+        }
+        input[type=range] { width: 200px; accent-color: var(--ot-orange); }
+
+        /* --- NAVIGATION --- */
+        .nav-controls {
+            position: fixed; bottom: 20px; right: 20px;
+            display: flex; gap: 10px; z-index: 100;
+        }
+        .nav-btn {
+            background: var(--ot-blue); color: white;
+            border: none;
+            width: 40px; height: 40px; border-radius: 4px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+                transition: 0.2s;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            .nav-btn:hover { background: var(--ot-orange); }
+    #slide2 .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+        gap: 15px;
+    }
+
+    #slide2 .card {
+        padding: 18 px 16px;
+        font-size: 0.85rem;
+        border-radius: 10px;
+    }
+
+    #slide2 .card h3 {
+        font-size: 1rem;
+    }
+
+    #slide2 .card p {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: COVER -->
+    <div class="slide-container active" id="slide1">
+        <div class="header-bar"></div>
+        <div class="slide-content" style="text-align: left; justify-content: center; position: relative; z-index: 2;">
+            <div style="margin-bottom: 20px; font-weight: bold; color: var(--ot-orange); text-transform: uppercase; letter-spacing: 1px;">
+                Research Seminar Series
+            </div>
+            <h1 style="font-size: 64px;">Adaptive Computation<br>in CNNs</h1>
+            <h2 style="border: none; color: #555; font-size: 32px; margin-top: 10px;">Differentiable Latency-Aware Gating (LAG)</h2>
+            
+            <div style="margin-top: 60px; padding-left: 20px; border-left: 4px solid var(--ot-blue);">
+                <p style="margin: 0; font-size: 24px; font-weight: 700; color: var(--ot-blue);">Ahmad Mousa & Mohamad Hafiz</p>
+                <p style="margin: 5px 0 0 0; font-size: 18px; color: #666;">IoT Research Lab</p>
+                <p style="margin: 5px 0 0 0; font-size: 18px; color: #666;">Faculty of Engineering and Applied Science</p>
+            </div>
+        </div>
+        <div class="title-decoration"></div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>November 2025</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: AGENDA -->
+    <div class="slide-container" id="slide2">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Presentation Agenda</h2>
+            <div class="grid-4" style="margin-top: 20px;">
+                <div class="card">
+                    <h3>01. Problem</h3>
+                    <p>Why static CNNs fail on Edge devices due to computational redundancy.</p>
+                </div>
+                <div class="card">
+                    <h3>02. Existing Methods</h3>
+                    <p>Review of static pruning and mixture-of-experts limitations.</p>
+                </div>
+                <div class="card">
+                    <h3>03. Proposed Idea</h3>
+                    <p>Latency-Aware Gating (LAG) framework overview.</p>
+                </div>
+                <div class="card">
+                    <h3>04. Derivation</h3>
+                    <p>Mathematical formulation of the differentiable gate.</p>
+                </div>
+                <div class="card">
+                    <h3>05. Results</h3>
+                    <p>Empirical evidence on VGG and ResNet architectures.</p>
+                </div>
+                <div class="card">
+                    <h3>06. Demo & Future</h3>
+                    <p>Interactive simulation and conclusion.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span id="slide-counter-2">2 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: PROBLEM STATEMENT -->
+    <div class="slide-container" id="slide3">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>The Efficiency Gap</h2>
+            <div class="grid-2">
+                <div>
+                    <h3 style="color: var(--ot-blue);">The "Static" Trap</h3>
+                    <p>Traditional CNNs are computationally rigid. They process a simple image of a clear sky with the exact same FLOPs count as a complex urban scene.</p>
+                    <ul style="color: #444; margin-top: 20px; list-style-type: square;">
+                        <li><strong>Battery Drain:</strong> Massive energy waste on IoT sensors.</li>
+                        <li><strong>Latency:</strong> Unacceptable delays for real-time autonomous navigation.</li>
+                        <li><strong>Over-parameterization:</strong> >90% of weights in VGG networks are often redundant.</li>
+                    </ul>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <div style="background: #eee; padding: 40px; border-radius: 50%; width: 400px; height: 400px; display: flex; justify-content: center; align-items: center;">
+                        <i class="fa-solid fa-microchip" style="font-size: 180px; color: var(--ot-blue);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>3 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: EXISTING STYLE -->
+    <div class="slide-container" id="slide4">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Existing Approaches</h2>
+            <div class="grid-2">
+                <div class="card" style="border-left-color: #d32f2f;">
+                    <i class="fa-solid fa-scissors" style="color: #d32f2f;"></i>
+                    <h3 style="color: #d32f2f;">Static Pruning</h3>
+                    <p><strong>Method:</strong> Permanently removing weights based on magnitude magnitude.</p>
+                    <p><strong>Limitation:</strong> Destructive. Once a channel is gone, it cannot be recovered for "hard" samples. Requires complex iterative fine-tuning.</p>
+                </div>
+                <div class="card" style="border-left-color: #fbc02d;">
+                    <i class="fa-solid fa-code-branch" style="color: #fbc02d;"></i>
+                    <h3 style="color: #fbc02d;">Mixture of Experts</h3>
+                    <p><strong>Method:</strong> Routing inputs to specific expert blocks.</p>
+                    <p><strong>Limitation:</strong> Introduces dynamic control flow which causes thread divergence on GPUs, often leading to <em>slower</em> wall-clock time despite fewer FLOPs.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>4 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: PROPOSED IDEA -->
+    <div class="slide-container" id="slide5">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Proposed: Latency-Aware Gating</h2>
+            <p style="font-size: 24px; margin-bottom: 40px;">
+                We propose <strong>LAG</strong>: An end-to-end differentiable mechanism that learns to turn channels ON or OFF based on the input feature map itself.
+            </p>
+            
+            <div style="display: flex; gap: 40px; justify-content: center;">
+                <div style="text-align: center; flex: 1; background: #f0f8ff; padding: 30px; border-radius: 8px;">
+                    <div style="font-size: 40px; color: var(--ot-blue); margin-bottom: 10px;"><i class="fa-solid fa-layer-group"></i></div>
+                    <h3 style="color: var(--ot-blue);">Input Adaptive</h3>
+                    <p>Easy images use 20% capacity. Hard images use 100%.</p>
+                </div>
+                <div style="text-align: center; flex: 1; background: #fff3e0; padding: 30px; border-radius: 8px;">
+                    <div style="font-size: 40px; color: var(--ot-orange); margin-bottom: 10px;"><i class="fa-solid fa-wave-square"></i></div>
+                    <h3 style="color: var(--ot-orange);">Differentiable</h3>
+                    <p>Uses "Soft Gating" during training to allow gradient flow.</p>
+                </div>
+                <div style="text-align: center; flex: 1; background: #e8f5e9; padding: 30px; border-radius: 8px;">
+                    <div style="font-size: 40px; color: #2e7d32; margin-bottom: 10px;"><i class="fa-solid fa-bolt"></i></div>
+                    <h3 style="color: #2e7d32;">Hardware Ready</h3>
+                    <p>Uses "Hard Gating" during inference for real speedup.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>5 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: DERIVATION -->
+    <div class="slide-container" id="slide6">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Mathematical Derivation</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>The Relaxed Gate</h3>
+                    <p>To enable backpropagation through binary decisions, we use a temperature-scaled sigmoid:</p>
+                    <div style="background: #f5f5f5; padding: 20px; border-left: 4px solid var(--ot-blue); font-family: 'Times New Roman', serif; font-size: 24px; margin: 20px 0;">
+                        $$ \sigma_T(x) = \frac{1}{1 + e^{-x/T}} $$
+                    </div>
+                    <p>Where $T$ is the temperature. As $T \to 0$, the function approaches a step function (Hard Gating).</p>
+                </div>
+                <div>
+                    <h3>The Objective Function</h3>
+                    <p>We minimize a joint loss:</p>
+                    <div style="background: #f5f5f5; padding: 20px; border-left: 4px solid var(--ot-orange); font-family: 'Times New Roman', serif; font-size: 24px; margin: 20px 0;">
+                        $$ L_{total} = L_{CE} + \lambda \sum_{l=1}^{L} ||g_l||_1 $$
+                    </div>
+                    <p>The first term $L_{CE}$ maintains accuracy. The second term induces sparsity (L1 regularization on gates).</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>6 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: RESULT 1 -->
+    <div class="slide-container" id="slide7">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Results I: VGG-11 on CIFAR-100</h2>
+            <p>VGG-11 is notoriously over-parameterized. Our method acts as a strong regularizer.</p>
+            
+            <div class="bar-container" style="margin-top: 60px;">
+                <div class="bar-row">
+                    <div class="bar-label">Baseline Accuracy</div>
+                    <div class="bar-track"><div class="bar-fill data-bar" data-width="91%" style="background: #999;">91.38%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">LAG Accuracy</div>
+                    <div class="bar-track"><div class="bar-fill orange data-bar" data-width="95%">94.85%</div></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px; display: flex; gap: 30px;">
+                <div style="flex: 1; border: 2px solid var(--ot-blue); padding: 20px; text-align: center; border-radius: 8px;">
+                    <div style="font-size: 48px; font-weight: 700; color: var(--ot-blue);">+3.47%</div>
+                    <div>Accuracy Boost</div>
+                </div>
+                <div style="flex: 1; border: 2px solid var(--ot-orange); padding: 20px; text-align: center; border-radius: 8px;">
+                    <div style="font-size: 48px; font-weight: 700; color: var(--ot-orange);">-25%</div>
+                    <div>Parameter Reduction</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>7 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: RESULT 2 -->
+    <div class="slide-container" id="slide8">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Results II: ResNet-18 on CIFAR-10</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>The Lottery Ticket Hypothesis</h3>
+                    <p>For ResNet-18, LAG successfully identified a sub-network with <strong>40% fewer FLOPs</strong> that matched the baseline accuracy exactly.</p>
+                    <p>This confirms that ResNet contains "winning tickets" — sparse sub-topologies capable of full performance — and LAG finds them automatically in a single training run.</p>
+                </div>
+                <div style="background: #fff; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-radius: 8px;">
+                    <div class="bar-container">
+                        <div style="margin-bottom: 10px; font-weight: bold;">Accuracy Comparison</div>
+                        <div class="bar-row">
+                            <div class="bar-label" style="width: 100px;">Baseline</div>
+                            <div class="bar-track"><div class="bar-fill data-bar" data-width="93%">93.02%</div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label" style="width: 100px;">LAG</div>
+                            <div class="bar-track"><div class="bar-fill orange data-bar" data-width="93%">93.01%</div></div>
+                        </div>
+                    </div>
+                    <div class="bar-container" style="margin-top: 40px;">
+                        <div style="margin-bottom: 10px; font-weight: bold;">Compute Cost (FLOPs)</div>
+                        <div class="bar-row">
+                            <div class="bar-label" style="width: 100px;">Baseline</div>
+                            <div class="bar-track"><div class="bar-fill data-bar" data-width="100%" style="background: #999;">100%</div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label" style="width: 100px;">LAG</div>
+                            <div class="bar-track"><div class="bar-fill orange data-bar" data-width="60%">60%</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>8 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: RESULT 3 -->
+    <div class="slide-container" id="slide9">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Results III: Anatomy of Pruning</h2>
+            <p>Analyzing <strong>where</strong> the network prunes reveals a biological pruning strategy.</p>
+            <div class="bar-container" style="margin-top: 40px;">
+                <div class="bar-row">
+                    <div class="bar-label">Layer 1 (Input)</div>
+                    <div class="bar-track"><div class="bar-fill data-bar" data-width="95%" style="background: var(--ot-blue);">5% Pruned (Retains Edges/Colors)</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Layer 4 (Middle)</div>
+                    <div class="bar-track"><div class="bar-fill data-bar" data-width="75%" style="background: var(--ot-blue-light);">25% Pruned</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Layer 8 (Output)</div>
+                    <div class="bar-track"><div class="bar-fill orange data-bar" data-width="50%">50% Pruned (Redundant Semantics)</div></div>
+                </div>
+            </div>
+            <p style="margin-top: 30px; font-size: 18px; color: #666;">
+                * The model autonomously learned that early feature extractors are critical, while high-level semantic channels contain significant redundancy.
+            </p>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>9 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: USE CASES -->
+    <div class="slide-container" id="slide10">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Real-World Applications</h2>
+            <div class="grid-4">
+                <div class="card">
+                    <i class="fa-solid fa-robot"></i>
+                    <h3>Autonomous Drones</h3>
+                    <p>Adapts computation based on flight speed and obstacle density to save battery.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-city"></i>
+                    <h3>Smart Cities</h3>
+                    <p>Surveillance cameras that reduce processing power when streets are empty.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <h3>Mobile AR</h3>
+                    <p>High FPS augmented reality filters without overheating the mobile device.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-leaf"></i>
+                    <h3>Green AI</h3>
+                    <p>Reducing the global carbon footprint of massive server farm inference.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>10 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: DEMO -->
+    <div class="slide-container" id="slide11">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Interactive Experiment</h2>
+            
+            <div class="demo-layout">
+                <!-- Standard Net -->
+                <div class="net-panel">
+                    <div class="net-header">
+                        <span>Standard CNN</span>
+                        <span style="opacity: 0.8;">DENSE</span>
+                    </div>
+                    <div class="canvas-area"><canvas id="canvasStd"></canvas></div>
+                    <div class="net-stats">
+                        <div>Params: <span class="stat-val" style="color: #333;">100%</span></div>
+                        <div>Latency: <span class="stat-val" style="color: #d32f2f;">HIGH</span></div>
+                    </div>
+                </div>
+                
+                <!-- Gated Net -->
+                <div class="net-panel" style="border-color: var(--ot-orange);">
+                    <div class="net-header" style="background: var(--ot-orange);">
+                        <span>LAG CNN</span>
+                        <span>ADAPTIVE</span>
+                    </div>
+                    <div class="canvas-area">
+                        <canvas id="canvasGated"></canvas>
+                        <div style="position: absolute; top: 10px; right: 10px; font-size: 12px; color: #fff; background: rgba(0,0,0,0.5); padding: 4px; border-radius: 4px;">
+                            Temp: <span id="temp-display">5.0</span>
+                        </div>
+                    </div>
+                    <div class="net-stats">
+                        <div>Params: <span class="stat-val" id="gated-params">100%</span></div>
+                        <div>Latency: <span class="stat-val" id="gated-latency" style="color: var(--ot-orange);">HIGH</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slider Control -->
+            <div class="slider-container">
+                <span style="font-weight: bold; color: var(--ot-blue);">TRAINING EPOCH</span>
+                <input type="range" min="0" max="100" value="0" id="epochSlider">
+                <span id="epoch-val" style="font-family: monospace; font-size: 20px; width: 50px; color: var(--ot-blue);">0</span>
+            </div>
+
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>11 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: FUTURE WORK -->
+    <div class="slide-container" id="slide12">
+        <div class="header-bar"></div>
+        <div class="slide-content">
+            <h2>Future Work</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fa-solid fa-microchip" style="color: var(--ot-blue);"></i>
+                    <h3 style="color: var(--ot-blue);">Expand performance evaluation</h3>
+        <p>We are investigating the limitations and capabilities of this technique, including extending the optimization beyond parameter counts toward integrating real FPGA cycle measurements and mobile GPU latency into the loss function.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-language" style="color: var(--ot-blue);"></i>
+                    <h3 style="color: var(--ot-blue);">LLMs & Transformers</h3>
+                    <p>Applying the LAG framework to Vision Transformers (ViT) and Large Language Models (GPT) to dynamically prune tokens, reducing the cost of generation.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>12 / 13</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 13: CONCLUSION -->
+    <div class="slide-container" id="slide13">
+        <div class="header-bar"></div>
+        <div class="slide-content" style="align-items: center; justify-content: center; text-align: center;">
+            <h1 style="margin-bottom: 40px;">Conclusion</h1>
+            <p style="font-size: 28px; max-width: 900px;">
+                Dynamic sparsity is key to next-generation Edge AI. 
+                <br><br>
+                We demonstrated a <strong>36% reduction</strong> in compute with <strong>improved accuracy</strong>, proving that efficiency and performance are not mutually exclusive.
+            </p>
+            
+            <div style="margin-top: 60px;">
+                <button onclick="showSlide(1)" style="padding: 15px 40px; background: var(--ot-blue); color: white; border: none; font-weight: bold; font-size: 18px; cursor: pointer; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Return to Start</button>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <span class="logo-text">Ontario Tech University</span>
+            <span>13 / 13</span>
+        </div>
+    </div>
+
+    <!-- NAVIGATION CONTROLS -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="nav-btn" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        /* --- GLOBAL SETUP --- */
+        let currentSlide = 1;
+        const totalSlides = 13;
+
+        // Auto-scale logic to fit window
+        function scaleSlides() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const scale = Math.min(w/1280, h/720) * 0.9;
+            document.documentElement.style.setProperty('--slide-scale', scale);
+            // Resize canvases if demo slide is active
+            if(currentSlide === 11) resizeDemo();
+        }
+        window.addEventListener('resize', scaleSlides);
+        scaleSlides();
+
+        /* --- NAVIGATION --- */
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > totalSlides) n = totalSlides;
+            
+            // Hide old
+            document.querySelector('.slide-container.active').classList.remove('active');
+            
+            // Show new
+            const next = document.getElementById('slide'+n);
+            next.classList.add('active');
+            
+            // Trigger bar animations
+            const bars = next.querySelectorAll('.data-bar');
+            bars.forEach(b => {
+                b.style.width = '0%';
+                setTimeout(() => b.style.width = b.dataset.width, 100);
+            });
+
+            currentSlide = n;
+
+            // Demo init check
+            if(currentSlide === 11) {
+                setTimeout(resizeDemo, 100);
+            }
+        }
+
+        function nextSlide() { showSlide(currentSlide + 1); }
+        function prevSlide() { showSlide(currentSlide - 1); }
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if(e.key === 'ArrowLeft') prevSlide();
+        });
+
+        /* --- DEMO SIMULATION (Slide 11) --- */
+        const cStd = document.getElementById('canvasStd');
+        const cGated = document.getElementById('canvasGated');
+        const ctxStd = cStd.getContext('2d');
+        const ctxGated = cGated.getContext('2d');
+        let nodes = [], conns = [], packets = [];
+        let pruningLevel = 0; // 0 to 1
+
+        function resizeDemo() {
+            const parent = cStd.parentElement;
+            if(!parent) return;
+            const rect = parent.getBoundingClientRect();
+            // Need to account for scale
+            cStd.width = rect.width;
+            cStd.height = rect.height;
+            cGated.width = rect.width;
+            cGated.height = rect.height;
+            initNet();
+        }
+
+        function initNet() {
+            nodes = []; conns = [];
+            const layers = [4, 6, 6, 4];
+            const w = cStd.width;
+            const h = cStd.height;
+            const xGap = w / 5;
+            
+            layers.forEach((count, lIdx) => {
+                const yGap = h / (count + 1);
+                for(let i=0; i<count; i++) {
+                    nodes.push({
+                        x: xGap * (lIdx + 1),
+                        y: yGap * (i + 1),
+                        layer: lIdx,
+                        val: Math.random() // Random importance
+                    });
+                }
+            });
+
+            // Connect
+            nodes.forEach(n1 => {
+                nodes.forEach(n2 => {
+                    if(n2.layer === n1.layer + 1) {
+                        conns.push({ from: n1, to: n2, val: (n1.val + n2.val)/2 });
+                    }
+                });
+            });
+        }
+
+        function drawNet(ctx, isGated) {
+            // Clear with dark blue/black background for canvas
+            ctx.fillStyle = '#1a202c';
+            ctx.fillRect(0,0,cStd.width,cStd.height);
+            
+            // Draw Connections
+            conns.forEach(c => {
+                if(isGated && c.val < pruningLevel) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.02)'; // Ghost
+                } else {
+                    ctx.strokeStyle = isGated ? 'rgba(231, 93, 42, 0.3)' : 'rgba(56, 189, 248, 0.15)';
+                }
+                ctx.beginPath();
+                ctx.moveTo(c.from.x, c.from.y);
+                ctx.lineTo(c.to.x, c.to.y);
+                ctx.stroke();
+            });
+
+            // Draw Nodes
+            nodes.forEach(n => {
+                if(isGated && n.val < pruningLevel) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                } else {
+                    ctx.fillStyle = isGated ? '#E75D2A' : '#0077CA';
+                }
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, 5, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        function animateDemo() {
+            if(currentSlide !== 11) {
+                requestAnimationFrame(animateDemo);
+                return;
+            }
+
+            // Spawn packets
+            if(Math.random() < 0.2) {
+                const starts = nodes.filter(n => n.layer === 0);
+                const start = starts[Math.floor(Math.random()*starts.length)];
+                packets.push({
+                    curr: start,
+                    target: null,
+                    prog: 0,
+                    gatedAlive: true
+                });
+            }
+
+            drawNet(ctxStd, false);
+            drawNet(ctxGated, true);
+
+            // Update Packets
+            for(let i=packets.length-1; i>=0; i--) {
+                let p = packets[i];
+                if(!p.target) {
+                    const opts = conns.filter(c => c.from === p.curr);
+                    if(!opts.length) { packets.splice(i,1); continue; }
+                    const choice = opts[Math.floor(Math.random()*opts.length)];
+                    p.target = choice.to;
+                    
+                    // Check logic for Gated
+                    if(choice.val < pruningLevel || choice.to.val < pruningLevel) p.gatedAlive = false;
+                }
+
+                p.prog += 0.05;
+                
+                // Draw Standard
+                const sx = p.curr.x + (p.target.x - p.curr.x)*p.prog;
+                const sy = p.curr.y + (p.target.y - p.curr.y)*p.prog;
+                
+                ctxStd.fillStyle = '#fff';
+                ctxStd.beginPath(); ctxStd.arc(sx, sy, 3, 0, Math.PI*2); ctxStd.fill();
+
+                // Draw Gated
+                if(p.gatedAlive) {
+                    ctxGated.fillStyle = '#FFD700'; // Gold/Yellow
+                    ctxGated.beginPath(); ctxGated.arc(sx, sy, 4, 0, Math.PI*2); ctxGated.fill();
+                }
+
+                if(p.prog >= 1) {
+                    p.curr = p.target;
+                    p.target = null;
+                    p.prog = 0;
+                    if(p.curr.layer === 3) packets.splice(i,1);
+                }
+            }
+
+            requestAnimationFrame(animateDemo);
+        }
+
+        // Slider Logic
+        document.getElementById('epochSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('epoch-val').innerText = val;
+            
+            // Calculate Pruning (Max 50% at epoch 100)
+            const pct = Math.min(50, val * 0.5);
+            pruningLevel = pct / 100;
+            
+            document.getElementById('gated-params').innerText = (100 - pct).toFixed(0) + "%";
+            
+            const lat = document.getElementById('gated-latency');
+            if(pct > 30) { lat.innerText = "LOW"; lat.style.color = "#2e7d32"; }
+            else if(pct > 10) { lat.innerText = "MED"; lat.style.color = "#f9a825"; }
+            else { lat.innerText = "HIGH"; lat.style.color = "#d32f2f"; }
+
+            // Temp
+            document.getElementById('temp-display').innerText = (5.0 - (val/20)).toFixed(1);
+        });
+
+        // Start loops
+        animateDemo();
+
+    </script>
+</body>
+</html>
